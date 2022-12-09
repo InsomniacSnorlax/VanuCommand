@@ -38,6 +38,13 @@ namespace VanuCommand.Modules
                 Style = ButtonStyle.Secondary
             };
 
+            var button3 = new ButtonBuilder()
+            {
+                Style = ButtonStyle.Secondary,
+                Emote = new Emoji("\U0001F4D1"),
+                CustomId = "Info"
+            };
+
             var button2 = new ButtonBuilder()
             {
                 Label = "Spreadsheet",
@@ -45,7 +52,7 @@ namespace VanuCommand.Modules
                 Style = ButtonStyle.Link
             };
 
-            await ReplyAsync(embed: close.Build(), components: new ComponentBuilder().WithButton(button).WithButton(button1).WithButton(button2).Build());
+            await ReplyAsync(embed: close.Build(), components: new ComponentBuilder().WithButton(button).WithButton(button1).WithButton(button2).WithButton(button3).Build());
         }
         #endregion
     }

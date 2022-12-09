@@ -38,6 +38,55 @@ namespace VanuCommand
             _client.ButtonExecuted += SelectButton;
 
             _client.ModalSubmitted += SelectModal;
+
+            _client.UserVoiceStateUpdated += LogUserVoiceStateUpdatedAsync;
+        }
+
+        public async Task LogUserVoiceStateUpdatedAsync(SocketUser user, SocketVoiceState curVoiceState, SocketVoiceState nextVoiceState)
+        {
+            if (user is not SocketGuildUser guildUser)
+            {
+                // They aren't a guild user, so we can't do anything to them.
+                return;
+            }
+
+            //1046955670949351455 Vanu Command Emerald
+
+            if (!guildUser.Guild.Id.Equals(1046955670949351455)) return;
+
+            Console.WriteLine(guildUser.Nickname);
+
+            var role = guildUser.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Dispatch");
+
+            if (curVoiceState.VoiceChannel != null && nextVoiceState.VoiceChannel == null)
+            {
+                // User left the channel
+                try
+                {
+                    // Surround in try-catch in the event we lack permissions.
+                    
+                    Console.WriteLine("Removed role:" + role);
+                    await (guildUser as IGuildUser).RemoveRoleAsync(role);
+                }
+                catch (Exception e)
+                {
+
+                }
+            }
+            else if (curVoiceState.VoiceChannel == null && nextVoiceState.VoiceChannel != null)
+            {
+                // User join the channel
+                try
+                {
+                    Console.WriteLine("Gave Role: " + role);
+                    
+                    await (guildUser as IGuildUser).AddRoleAsync(role);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e + $"Failed to mute user in guild {guildUser.Guild.Id}.");
+                }
+            }
         }
 
         private async Task SelectModal(SocketModal arg)
@@ -51,12 +100,40 @@ namespace VanuCommand
             switch (arg.Data.CustomId)
             {
                 case "Refresh":
+                    Console.WriteLine(arg.User + " Refresh");
                     await GoogleSheets(arg);
                     break;
                 case "AusTime":
+                    Console.WriteLine(arg.User + " Aussie Time");
                     await GoogleSheets(arg, true);
                     break;
+                case "Info":
+                    await InfoEmbed(arg);
+                    break;
             }
+        }
+
+        private async Task InfoEmbed(SocketMessageComponent arg)
+        {
+            var embed = new EmbedBuilder()
+            { 
+                Title = "**Vanu Command Bot Features**",
+                Description = "This bot uses a google spreadsheet in order to get the information of the schedules and automatically converts it to your local time for ease of access",
+                ThumbnailUrl = "https://cdn.discordapp.com/attachments/1046967059701047326/1048466745662373960/bsrlogo.png",
+                Color = Discord.Color.Blue,
+            }
+            .AddField("**Spreadsheet**", 
+            "• Dates and time are set to (EST)+5 and in 24h format \n" +
+            "• Dates are automatically changed once the week is over, controlled by cell C2 on the spreadsheet \n" +
+            "• Highly scalable and multiple people can have access. Ping or DM <@272173309850943488> to gain editor access")
+            .AddField("**Bot**",
+            "• Outfit schedule time is shown to the individual in their local time \n" +
+            "• Pressing the refresh button will modify the message with the new variables from the spreadsheet (please do not spam) \n" +
+            "• Aussie Dates just shifts the days by one so Monday would be Tuesday for us (please do not spam)\n" +
+            "• Setup is as easy as using /schedulesetup and hitting the refresh button \n" +
+            "• Don't worry about hosting. I got that covered");
+
+            await arg.RespondAsync(embed: embed.Build(), ephemeral: true);
         }
 
         private async Task HandleInteraction(SocketInteraction arg)
